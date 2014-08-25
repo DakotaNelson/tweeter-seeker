@@ -3,7 +3,29 @@
 from db_tseeker import dbclient
 from schema_tseeker import User, Query
 import argparse
+import signal
+import time
 from twython import Twython
+from multiprocessing import Process, Queue
+
+def getQueries(poisonPill):
+    while poisonPill.empty():
+        query = "ISIS"
+        results = twitter.search(q=query, count=1)
+        print(results)
+        time.sleep(5)
+    print("dying!")
+    return
+
+def getUsers(poisonPill):
+    return
+
+def getTimelines(poisonPill):
+    return
+
+def dieGracefully(signal, frame):
+    killQueue.put(True)
+    return
 
 # set up for parsing command line arguments
 parser = argparse.ArgumentParser(description='Start a worker to fill out your tweeter-seeker database. If instructed to harvest Tweets, the worker will find Tweets that match the queries in the database. If instructed to harvest users, the worker will harvest Twitter user objects for the Tweets currently in the database. If instructed to harvest timelines, the worker will harvest all the Tweets of each author in the database.')
@@ -36,22 +58,29 @@ twitter = Twython(args.apikey, args.apisecret, oauth_version=2)
 TOKEN = twitter.obtain_access_token()
 twitter = Twython(args.apikey, access_token=TOKEN)
 
-
-### Setup is complete, now on to the actual program. ###
-
-
-def getQueries():
-    query = "test"
-    results = twitter.search(q=query, count=4)
-    print(results)
-    return
-
-def getUsers():
-    return
-
-def getTimelines():
-    return
-
 ### And... begin! ###
 
-getQueries()
+print(args)
+
+processes = []
+killQueue = Queue()
+
+signal.signal(signal.SIGINT, dieGracefully)
+
+if args.tweets:
+    queryProcess = Process(target=getQueries, args=(killQueue,))
+    processes.append(queryProcess)
+
+if args.users:
+    userProcess = Process(target=getUsers, args=(killQueue,))
+    processes.append(userProcess)
+
+if args.timelines:
+    timelineProcess = Process(target=getTimelines, args=(killQueue,))
+    processes.append(timelineProcess)
+
+for process in processes:
+    process.start()
+
+# keep running until we're killed
+signal.pause()
