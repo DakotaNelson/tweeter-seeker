@@ -1,0 +1,29 @@
+#!/bin/bash
+
+echo "Installing twython..."
+pip install twython
+
+echo "Installing pymongo..."
+pip install pymongo
+
+#echo "Installing rexster..."
+#echo "Installing bulbs..."
+#pip install https://github.com/espeed/bulbs/tarball/master
+
+#if [ ! -d neo4j-community-2.1.3 ]; then
+#  echo "Installing neo4j server..."
+#  wget http://dist.neo4j.org/neo4j-community-2.1.3-unix.tar.gz
+#  tar -xvzf neo4j-community-2.1.3-unix.tar.gz
+#  ./neo4j-community-2.1.3/bin/neo4j start
+#  rm ./neo4j-community-2.1.3-unix.tar.gz
+#fi
+
+#git clone https://github.com/tinkerpop/rexster.git
+#cd rexster
+#mvn clean install
+#cd ..
+
+#echo "Installing gremlin..."
+#git clone https://github.com/tinkerpop/gremlin.git
+#cd gremlin
+#mvn clean install
