@@ -8,6 +8,7 @@ import argparse
 parser = argparse.ArgumentParser(description='Add items to the tweeter-seeker database for workers to fill out.')
 
 parser.add_argument('type', choices=['user','query'], help="The type of item(s) to be added.")
+# TODO: add geo objects (i.e. all tweets within x km of a place)
 parser.add_argument('items', help="A single item or list of items; queries or users as specified in the earlier arguments.")
 parser.add_argument('-v', '--verbose', action="store_true", help="Increase output verbosity.")
 parser.add_argument('--dbhost', default="localhost", help="Specify database address. Defaults to localhost.")

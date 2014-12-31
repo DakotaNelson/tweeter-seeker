@@ -1,28 +1,55 @@
 #!/usr/bin/env python
 
 from db_tseeker import dbclient
-from schema_tseeker import User, Query
+from schema_tseeker import User, Query, Tweet
 import argparse
 import signal
 import time
+import datetime
 from twython import Twython
 from multiprocessing import Process, Queue
 
+""" subprocess to harvest Tweets based on queries """
 def getQueries(poisonPill):
     while poisonPill.empty():
-        query = "ISIS"
-        results = twitter.search(q=query, count=1)
-        print(results)
-        time.sleep(5)
-    print("dying!")
+        try:
+            # find the query that hasn't been touched the longest
+            query = db.findGreatest('queries', 'last_used')[0]
+            # TODO findandModify in order to 'lock' a query to avoid two workers duplicating efforet
+            db.update('queries', {'_id':query['_id']}, {'$set':{'last_used':datetime.datetime.utcnow()}})
+            query = query['query'] # get the actual query string, not the other stuff (age, id, etc.)
+            if args.verbose:
+                print("Searching for query: " + query)
+            results = twitter.search(q=query, count=3)
+            for status in results['statuses']:
+                # although Twitter wants us to use id instead of screen name (as screen name is unique but *can* change), keying from screen name helps notice changes in screen name as well as allowing us to add 'empty' user objects to be filled by workers
+                user = User(status['user']['screen_name'], status['user'])
+                status.pop('user', None)
+                # if the user doesn't exist, insert it
+                #db.insert("users", user
+                print(user)
+                # then insert the status, with references to the query and user objects
+                tweet = Tweet(status, user['_id'], query['_id'])
+                db.insert("tweets", tweet)
+                print(status)
+                # maybe something useful in the metadata?
+                print(status['search_metadata']
+            time.sleep(2) # so we don't hit the rate limit
+            # TODO time how long the process takes and adjust this intelligently
+        except IndexError:
+            print("No queries in database to harvest Tweets for!")
+            time.sleeep(30)
     return
 
+""" subprocess to harvest users"""
 def getUsers(poisonPill):
     return
 
+""" subprocess to harvest all of a user's Tweets"""
 def getTimelines(poisonPill):
     return
 
+""" kills subprocesses with a poison pill """
 def dieGracefully(signal, frame):
     killQueue.put(True)
     return
@@ -59,8 +86,6 @@ TOKEN = twitter.obtain_access_token()
 twitter = Twython(args.apikey, access_token=TOKEN)
 
 ### And... begin! ###
-
-print(args)
 
 processes = []
 killQueue = Queue()
